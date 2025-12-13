@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3C 配件管理系統</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                        tech: ['"Orbitron"', 'sans-serif'],
+                    },
+                    colors: {
+                        neon: {
+                            blue: '#00f3ff',
+                            purple: '#bc13fe',
+                            green: '#0aff0a',
+                            dark: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f172a; /* Slate 900 */
+            color: #e2e8f0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* 隱藏捲軸但保留功能 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 10px;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .tech-border {
+            position: relative;
+        }
+        .tech-border::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, #00f3ff, #bc13fe);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+            transform-origin: left;
+        }
+        .tech-border:hover::after, .active-nav::after {
+            transform: scaleX(1);
+        }
+
+        .page-section {
+            display: none;
+            padding-bottom: 80px; /* Space for bottom content */
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .page-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Input Styling */
+        input, select, textarea {
+            background-color: #1e293b;
+            border: 1px solid #475569;
+            color: white;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #00f3ff;
+            box-shadow: 0 0 0 2px rgba(0, 243, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+
+    <!-- Fixed Navigation Header -->
+    <nav class="fixed top-0 w-full z-50 glass-panel border-b border-slate-700 h-16 flex items-center justify-between px-4">
+        <div class="flex items-center gap-2" onclick="showPage('home')">
+            <i class="fa-solid fa-microchip text-neon-blue text-xl"></i>
+            <h1 class="text-lg font-bold font-tech tracking-wider text-white">3C 配件管理 <span class="text-xs text-neon-purple align-top">PRO</span></h1>
+        </div>
+        <div class="text-xs text-slate-400 border border-slate-600 px-2 py-1 rounded-full">
+            老闆專用
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="pt-20 px-4 max-w-lg mx-auto min-h-screen">
+
+        <!-- 1. HOME DASHBOARD -->
+        <div id="home" class="page-section active">
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <!-- Menu Cards -->
+                <button onclick="showPage('priceList')" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-slate-800 transition active:scale-95 group">
+                    <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:bg-blue-500/40 transition">
+                        <i class="fa-solid fa-list text-blue-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200">價目表</span>
+                </button>
+
+                <button onclick="showPage('restock')" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-slate-800 transition active:scale-95 group">
+                    <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center group-hover:bg-green-500/40 transition">
+                        <i class="fa-solid fa-box-open text-green-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200">進貨入庫</span>
+                </button>
+
+                <button onclick="showPage('shipping')" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-slate-800 transition active:scale-95 group">
+                    <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/40 transition">
+                        <i class="fa-solid fa-rocket text-purple-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200">出貨結帳</span>
+                </button>
+
+                <button onclick="showPage('inventory')" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-slate-800 transition active:scale-95 group">
+                    <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center group-hover:bg-orange-500/40 transition">
+                        <i class="fa-solid fa-boxes-stacked text-orange-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200">庫存管理</span>
+                </button>
+
+                <button onclick="showPage('vendors')" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-slate-800 transition active:scale-95 group">
+                    <div class="w-12 h-12 rounded-full bg-pink-500/20 flex items-center justify-center group-hover:bg-pink-500/40 transition">
+                        <i class="fa-solid fa-address-book text-pink-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200">廠商資料</span>
+                </button>
+
+                <button onclick="showPage('history')" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-slate-800 transition active:scale-95 group">
+                    <div class="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/40 transition">
+                        <i class="fa-solid fa-clock-rotate-left text-cyan-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200">售出紀錄</span>
+                </button>
+            </div>
+            
+            <div class="mt-8 p-4 glass-panel rounded-xl">
+                <h3 class="text-neon-blue font-bold mb-2">系統狀態</h3>
+                <div class="flex justify-between text-sm text-slate-400">
+                    <span>總庫存品項:</span>
+                    <span id="dashboard-count" class="text-white font-tech">0</span>
+                </div>
+                <div class="flex justify-between text-sm text-slate-400 mt-1">
+                    <span>今日銷售額:</span>
+                    <span id="dashboard-sales" class="text-white font-tech">$0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. PRICE LIST -->
+        <div id="priceList" class="page-section">
+            <h2 class="text-xl font-bold text-neon-blue mb-4 border-l-4 border-neon-blue pl-3">價目表</h2>
+            <div class="glass-panel rounded-xl overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-800 text-slate-300">
+                        <tr>
+                            <th class="p-3">品名</th>
+                            <th class="p-3 text-right">售價</th>
+                            <th class="p-3 text-right text-xs">庫存</th>
+                        </tr>
+                    </thead>
+                    <tbody id="price-list-body" class="divide-y divide-slate-700">
+                        <!-- Dynamic Content -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="price-list-empty" class="text-center text-slate-500 mt-10 hidden">
+                <i class="fa-solid fa-ghost text-4xl mb-2"></i>
+                <p>暫無資料，請先去進貨</p>
+            </div>
+        </div>
+
+        <!-- 3. RESTOCK (進貨) -->
+        <div id="restock" class="page-section">
+            <h2 class="text-xl font-bold text-green-400 mb-4 border-l-4 border-green-400 pl-3">進貨入庫</h2>
+            
+            <div class="glass-panel p-5 rounded-2xl space-y-4">
+                <!-- Vendor Select -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">選擇廠商</label>
+                    <div class="flex gap-2">
+                        <select id="restock-vendor" class="w-full p-3 rounded-lg appearance-none">
+                            <option value="" disabled selected>請選擇...</option>
+                        </select>
+                        <button onclick="showPage('vendors')" class="bg-slate-700 px-3 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <!-- Product Name -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">品項名稱</label>
+                    <input type="text" id="restock-name" class="w-full p-3 rounded-lg" placeholder="例如：iPhone 15 透明殼">
+                </div>
+
+                <!-- Currency & Cost -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">幣別</label>
+                        <select id="restock-currency" class="w-full p-3 rounded-lg" onchange="calculatePrice()">
+                            <option value="TWD">台幣 (TWD)</option>
+                            <option value="CNY">人民幣 (CNY)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">進貨成本</label>
+                        <input type="number" id="restock-cost" class="w-full p-3 rounded-lg" placeholder="0" oninput="calculatePrice()">
+                    </div>
+                </div>
+
+                <!-- Auto Calculation Display -->
+                <div id="currency-convert-display" class="hidden bg-slate-800 p-2 rounded text-xs text-yellow-400">
+                    <i class="fa-solid fa-calculator"></i> 匯率換算 (*5): <span id="converted-cost">0</span> TWD
+                </div>
+
+                <!-- Margin & Pricing -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">預期毛利率 (%)</label>
+                        <input type="number" id="restock-margin" class="w-full p-3 rounded-lg" value="40" placeholder="40" oninput="calculatePrice()">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">數量</label>
+                        <input type="number" id="restock-qty" class="w-full p-3 rounded-lg" value="1" placeholder="1">
+                    </div>
+                </div>
+
+                <!-- Calculated Price Result -->
+                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs text-slate-400">建議售價 (公式計算)</label>
+                        <span class="text-xs text-slate-500">成本 / (1 - 毛利)</span>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <span class="text-slate-400">$</span>
+                        <input type="number" id="restock-price" class="bg-transparent text-xl font-bold text-neon-blue w-full focus:outline-none" placeholder="0">
+                    </div>
+                </div>
+
+                <button onclick="submitRestock()" class="w-full bg-gradient-to-r from-green-600 to-green-500 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition mt-2">
+                    確認進貨
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. SHIPPING (出貨) -->
+        <div id="shipping" class="page-section">
+            <h2 class="text-xl font-bold text-purple-400 mb-4 border-l-4 border-purple-400 pl-3">出貨結帳</h2>
+            
+            <div class="glass-panel p-5 rounded-2xl space-y-4">
+                <!-- Select Product -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">選擇品項 (搜尋)</label>
+                    <input list="inventory-list" id="ship-name-input" class="w-full p-3 rounded-lg" placeholder="輸入名稱或選擇..." onchange="fillShipDetails()">
+                    <datalist id="inventory-list">
+                        <!-- Populated by JS -->
+                    </datalist>
+                </div>
+
+                <div id="ship-details-card" class="hidden bg-slate-800 p-4 rounded-lg border border-slate-600">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-slate-400 text-sm">庫存剩餘:</span>
+                        <span id="ship-stock-display" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="text-slate-400 text-sm">原始單價:</span>
+                        <span id="ship-orig-price" class="font-bold text-lg text-white">0</span>
+                    </div>
+                </div>
+
+                <!-- Quantity Selector -->
+                <div id="ship-qty-container" class="hidden">
+                    <label class="block text-xs text-slate-400 mb-1">出貨數量</label>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateShipQty(-1)" class="w-12 h-12 rounded-xl bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center active:scale-95 transition">
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <input type="number" id="ship-qty" class="flex-1 h-12 bg-slate-900 border border-slate-600 rounded-xl text-center text-white font-bold text-xl" value="1" onchange="updateShipPrice()" readonly>
+                        <button onclick="updateShipQty(1)" class="w-12 h-12 rounded-xl bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center active:scale-95 transition">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Discount Toggle -->
+                <div class="flex items-center gap-2 my-2">
+                    <input type="checkbox" id="ship-discount-check" class="w-4 h-4 rounded" onchange="toggleDiscount()">
+                    <label for="ship-discount-check" class="text-sm text-slate-300">輸入折扣 / 改價 (總金額)</label>
+                </div>
+
+                <!-- Final Price Input -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">實際成交總金額</label>
+                    <input type="number" id="ship-final-price" class="w-full p-3 rounded-lg bg-slate-900 border-purple-500/50 text-purple-400 font-bold text-lg" readonly>
+                </div>
+
+                <!-- Note -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">備註 (選填)</label>
+                    <input type="text" id="ship-note" class="w-full p-3 rounded-lg" placeholder="客訂、贈品...">
+                </div>
+
+                <button onclick="submitShipment()" class="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition mt-2">
+                    <i class="fa-solid fa-paper-plane mr-2"></i> 確認出貨
+                </button>
+            </div>
+        </div>
+
+        <!-- 5. INVENTORY (庫存管理) -->
+        <div id="inventory" class="page-section">
+            <h2 class="text-xl font-bold text-orange-400 mb-4 border-l-4 border-orange-400 pl-3">庫存管理</h2>
+            
+            <!-- Search Bar -->
+            <div class="relative mb-4">
+                <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-500"></i>
+                <input type="text" id="inventory-search" oninput="renderInventory()" class="w-full pl-10 p-3 rounded-xl bg-slate-800 border-none focus:ring-2 focus:ring-orange-500" placeholder="搜尋 品名 或 廠商...">
+            </div>
+
+            <div id="inventory-container" class="space-y-3 pb-20">
+                <!-- Cards will be injected here -->
+            </div>
+            
+            <div id="inventory-empty" class="text-center text-slate-500 mt-10 hidden">
+                <p>找不到符合的庫存資料</p>
+            </div>
+        </div>
+
+        <!-- 6. VENDORS (廠商資料) -->
+        <div id="vendors" class="page-section">
+            <h2 class="text-xl font-bold text-pink-400 mb-4 border-l-4 border-pink-400 pl-3">廠商資料</h2>
+            
+            <div class="flex gap-2 mb-6">
+                <input type="text" id="new-vendor-name" class="flex-1 p-3 rounded-xl" placeholder="輸入新廠商名稱">
+                <button onclick="addVendor()" class="bg-pink-600 text-white px-5 rounded-xl font-bold shadow-lg hover:bg-pink-500 active:scale-95">新增</button>
+            </div>
+
+            <h3 class="text-sm text-slate-400 mb-2">已建檔廠商</h3>
+            <div id="vendor-list" class="grid grid-cols-1 gap-2">
+                <!-- List -->
+            </div>
+        </div>
+
+        <!-- 7. HISTORY (售出紀錄) -->
+        <div id="history" class="page-section">
+            <h2 class="text-xl font-bold text-cyan-400 mb-4 border-l-4 border-cyan-400 pl-3">售出紀錄</h2>
+            
+            <div class="overflow-y-auto max-h-[70vh]">
+                <div id="history-list" class="space-y-3">
+                    <!-- History Cards -->
+                </div>
+            </div>
+            <div id="history-empty" class="text-center text-slate-500 mt-10 hidden">
+                <p>尚無銷售紀錄</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Global Back to Home Button (Visible only on sub-pages) -->
+    <div id="back-home-btn" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 hidden z-40">
+        <button onclick="showPage('home')" class="bg-slate-800/90 backdrop-blur text-white px-6 py-3 rounded-full shadow-2xl border border-slate-600 flex items-center gap-2 hover:bg-slate-700 transition">
+            <i class="fa-solid fa-house"></i>
+            <span>返回首頁</span>
+        </button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-xl shadow-2xl border border-slate-600 transition-opacity duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-check-circle text-green-400"></i>
+        <span id="toast-msg">操作成功</span>
+    </div>
+
+    <script>
+        // --- Data Structure & Init ---
+        const DB = {
+            vendors: JSON.parse(localStorage.getItem('3c_vendors')) || ['Apple 原廠', '犀牛盾', '掏寶批發'],
+            inventory: JSON.parse(localStorage.getItem('3c_inventory')) || [],
+            sales: JSON.parse(localStorage.getItem('3c_sales')) || []
+        };
+
+        function saveData() {
+            localStorage.setItem('3c_vendors', JSON.stringify(DB.vendors));
+            localStorage.setItem('3c_inventory', JSON.stringify(DB.inventory));
+            localStorage.setItem('3c_sales', JSON.stringify(DB.sales));
+            updateDashboard();
+        }
+
+        // --- Navigation ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            // Toggle Back Button
+            const backBtn = document.getElementById('back-home-btn');
+            if(pageId === 'home') {
+                backBtn.classList.add('hidden');
+            } else {
+                backBtn.classList.remove('hidden');
+                // Refresh data for specific pages
+                if(pageId === 'priceList') renderPriceList();
+                if(pageId === 'inventory') renderInventory();
+                if(pageId === 'vendors') renderVendors();
+                if(pageId === 'restock') populateVendorSelect();
+                if(pageId === 'shipping') { populateShipDatalist(); clearShipForm(); }
+                if(pageId === 'history') renderHistory();
+            }
+            window.scrollTo(0,0);
+        }
+
+        // --- Toast Notification ---
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toast-icon');
+            const txt = document.getElementById('toast-msg');
+            
+            txt.innerText = msg;
+            icon.className = type === 'success' ? 'fa-solid fa-check-circle text-green-400' : 'fa-solid fa-exclamation-circle text-red-400';
+            
+            toast.classList.remove('opacity-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 2000);
+        }
+
+        // --- 1. Dashboard ---
+        function updateDashboard() {
+            // Count total stock items
+            const totalItems = DB.inventory.reduce((acc, item) => acc + parseInt(item.qty), 0);
+            document.getElementById('dashboard-count').innerText = totalItems;
+
+            // Calculate today's sales
+            const todayStr = new Date().toLocaleDateString();
+            const todaySales = DB.sales
+                .filter(s => new Date(s.date).toLocaleDateString() === todayStr)
+                .reduce((acc, s) => acc + parseInt(s.price), 0);
+            document.getElementById('dashboard-sales').innerText = `$${todaySales.toLocaleString()}`;
+        }
+
+        // --- 2. Vendors ---
+        function renderVendors() {
+            const list = document.getElementById('vendor-list');
+            list.innerHTML = '';
+            DB.vendors.forEach((v, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-slate-800 p-4 rounded-xl flex justify-between items-center';
+                div.innerHTML = `
+                    <span class="font-bold">${v}</span>
+                    <button onclick="deleteVendor(${index})" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        function addVendor() {
+            const input = document.getElementById('new-vendor-name');
+            const val = input.value.trim();
+            if(val) {
+                DB.vendors.push(val);
+                saveData();
+                renderVendors();
+                input.value = '';
+                showToast('廠商已新增');
+            }
+        }
+
+        function deleteVendor(index) {
+            if(confirm('確定刪除此廠商？')) {
+                DB.vendors.splice(index, 1);
+                saveData();
+                renderVendors();
+            }
+        }
+
+        function populateVendorSelect() {
+            const sel = document.getElementById('restock-vendor');
+            sel.innerHTML = '<option value="" disabled selected>請選擇...</option>';
+            DB.vendors.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.innerText = v;
+                sel.appendChild(opt);
+            });
+        }
+
+        // --- 3. Restock ---
+        function calculatePrice() {
+            const currency = document.getElementById('restock-currency').value;
+            let cost = parseFloat(document.getElementById('restock-cost').value) || 0;
+            const margin = parseFloat(document.getElementById('restock-margin').value) || 0;
+            const displayConvert = document.getElementById('currency-convert-display');
+            const convertedSpan = document.getElementById('converted-cost');
+
+            // Handle Currency
+            if(currency === 'CNY') {
+                displayConvert.classList.remove('hidden');
+                cost = cost * 5;
+                convertedSpan.innerText = cost;
+            } else {
+                displayConvert.classList.add('hidden');
+            }
+
+            // Formula: Cost / (1 - Margin%)
+            // e.g., Cost 100, Margin 40% (0.4) -> 100 / 0.6 = 166.6
+            let sellPrice = 0;
+            if(cost > 0 && margin < 100) {
+                sellPrice = Math.ceil(cost / (1 - (margin / 100)));
+            }
+
+            document.getElementById('restock-price').value = sellPrice;
+        }
+
+        function submitRestock() {
+            const vendor = document.getElementById('restock-vendor').value;
+            const name = document.getElementById('restock-name').value;
+            let costInput = parseFloat(document.getElementById('restock-cost').value);
+            const currency = document.getElementById('restock-currency').value;
+            const price = parseInt(document.getElementById('restock-price').value);
+            const qty = parseInt(document.getElementById('restock-qty').value);
+
+            if(!vendor || !name || !costInput || !price || !qty) {
+                showToast('請填寫完整資料', 'error');
+                return;
+            }
+
+            // Normalize cost to TWD for storage
+            const finalCost = currency === 'CNY' ? costInput * 5 : costInput;
+
+            // Check if item exists (by name & vendor) to update qty or add new
+            const existingItem = DB.inventory.find(i => i.name === name && i.vendor === vendor);
+            
+            if(existingItem) {
+                existingItem.qty = parseInt(existingItem.qty) + qty;
+                existingItem.cost = finalCost; // Update latest cost
+                existingItem.price = price;    // Update latest price
+            } else {
+                DB.inventory.push({
+                    id: Date.now(),
+                    vendor,
+                    name,
+                    cost: finalCost,
+                    price,
+                    qty
+                });
+            }
+
+            saveData();
+            showToast('進貨成功');
+            
+            // Clear inputs
+            document.getElementById('restock-name').value = '';
+            document.getElementById('restock-cost').value = '';
+            document.getElementById('restock-price').value = '';
+            document.getElementById('restock-qty').value = '1';
+        }
+
+        // --- 4. Price List & Inventory ---
+        function renderPriceList() {
+            const tbody = document.getElementById('price-list-body');
+            const empty = document.getElementById('price-list-empty');
+            tbody.innerHTML = '';
+            
+            if(DB.inventory.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            DB.inventory.forEach(item => {
+                const tr = document.createElement('tr');
+                // Alternating row colors handled by loop logic if needed, but simple divide is fine
+                tr.innerHTML = `
+                    <td class="p-3">
+                        <div class="font-bold text-slate-200">${item.name}</div>
+                        <div class="text-xs text-slate-500">${item.vendor}</div>
+                    </td>
+                    <td class="p-3 text-right font-tech text-neon-blue">$${item.price}</td>
+                    <td class="p-3 text-right text-xs text-slate-400">${item.qty}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderInventory() {
+            const container = document.getElementById('inventory-container');
+            const searchVal = document.getElementById('inventory-search').value.toLowerCase();
+            const empty = document.getElementById('inventory-empty');
+            container.innerHTML = '';
+
+            const filtered = DB.inventory.filter(item => 
+                item.name.toLowerCase().includes(searchVal) || 
+                item.vendor.toLowerCase().includes(searchVal)
+            );
+
+            if(filtered.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'glass-panel p-4 rounded-xl border-l-4 border-orange-400 flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <div class="text-xs text-orange-300 mb-1">${item.vendor}</div>
+                        <h3 class="font-bold text-white text-lg">${item.name}</h3>
+                        <div class="text-xs text-slate-500 mt-1">成本: $${item.cost}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-tech text-neon-blue">$${item.price}</div>
+                        <div class="text-sm text-slate-400 mt-1">庫存: <span class="${item.qty < 3 ? 'text-red-400 font-bold' : 'text-white'}">${item.qty}</span></div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // --- 5. Shipping ---
+        let selectedShipItem = null;
+
+        function populateShipDatalist() {
+            const dl = document.getElementById('inventory-list');
+            dl.innerHTML = '';
+            DB.inventory.forEach(item => {
+                if(item.qty > 0) {
+                    const opt = document.createElement('option');
+                    opt.value = item.name; // Datalist shows value
+                    opt.setAttribute('data-vendor', item.vendor); // Extra info
+                    opt.textContent = `${item.vendor} - $${item.price}`;
+                    dl.appendChild(opt);
+                }
+            });
+        }
+
+        function fillShipDetails() {
+            const nameInput = document.getElementById('ship-name-input').value;
+            // Simple match logic (might need more robust if duplicate names exist across vendors, but assuming unique combos for simple app)
+            selectedShipItem = DB.inventory.find(i => i.name === nameInput && i.qty > 0);
+            
+            const card = document.getElementById('ship-details-card');
+            const qtyContainer = document.getElementById('ship-qty-container');
+            const qtyInput = document.getElementById('ship-qty');
+
+            if(selectedShipItem) {
+                card.classList.remove('hidden');
+                qtyContainer.classList.remove('hidden');
+                document.getElementById('ship-stock-display').innerText = selectedShipItem.qty;
+                document.getElementById('ship-orig-price').innerText = '$' + selectedShipItem.price;
+                
+                // Reset defaults
+                qtyInput.value = 1;
+                updateShipPrice();
+                document.getElementById('ship-discount-check').checked = false;
+            } else {
+                card.classList.add('hidden');
+                qtyContainer.classList.add('hidden');
+                document.getElementById('ship-final-price').value = '';
+            }
+        }
+        
+        function updateShipQty(delta) {
+            if(!selectedShipItem) return;
+            const qtyInput = document.getElementById('ship-qty');
+            let currentQty = parseInt(qtyInput.value) || 1;
+            let newQty = currentQty + delta;
+            
+            // Limit checks
+            if (newQty < 1) newQty = 1;
+            if (newQty > selectedShipItem.qty) {
+                showToast('庫存不足', 'error');
+                newQty = selectedShipItem.qty;
+            }
+            
+            qtyInput.value = newQty;
+            updateShipPrice();
+        }
+
+        function updateShipPrice() {
+            if(!selectedShipItem) return;
+            const qty = parseInt(document.getElementById('ship-qty').value) || 1;
+            const priceInput = document.getElementById('ship-final-price');
+            const isDiscounted = document.getElementById('ship-discount-check').checked;
+
+            // Only auto-update price if not in manual discount mode
+            if(!isDiscounted) {
+                priceInput.value = selectedShipItem.price * qty;
+                priceInput.readOnly = true;
+                priceInput.classList.add('bg-slate-900');
+                priceInput.classList.remove('bg-slate-800');
+            }
+        }
+
+        function toggleDiscount() {
+            const isChecked = document.getElementById('ship-discount-check').checked;
+            const priceInput = document.getElementById('ship-final-price');
+            priceInput.readOnly = !isChecked;
+            if(isChecked) {
+                priceInput.focus();
+                priceInput.classList.add('bg-slate-800');
+                priceInput.classList.remove('bg-slate-900');
+            } else {
+                // Reset to standard calculation if unchecked
+                updateShipPrice();
+            }
+        }
+
+        function clearShipForm() {
+            document.getElementById('ship-name-input').value = '';
+            document.getElementById('ship-details-card').classList.add('hidden');
+            document.getElementById('ship-qty-container').classList.add('hidden');
+            document.getElementById('ship-final-price').value = '';
+            document.getElementById('ship-note').value = '';
+            document.getElementById('ship-discount-check').checked = false;
+            document.getElementById('ship-qty').value = 1;
+            selectedShipItem = null;
+        }
+
+        function submitShipment() {
+            if(!selectedShipItem) {
+                showToast('請選擇有效商品', 'error');
+                return;
+            }
+
+            const qty = parseInt(document.getElementById('ship-qty').value) || 1;
+            const finalPrice = parseInt(document.getElementById('ship-final-price').value);
+            const note = document.getElementById('ship-note').value;
+
+            if(!finalPrice) {
+                showToast('價格錯誤', 'error');
+                return;
+            }
+            
+            if(qty > selectedShipItem.qty) {
+                 showToast('庫存不足！', 'error');
+                 return;
+            }
+
+            // 1. Deduct Stock
+            selectedShipItem.qty -= qty;
+            
+            // 2. Add to History
+            DB.sales.unshift({
+                id: Date.now(),
+                itemName: selectedShipItem.name,
+                vendor: selectedShipItem.vendor,
+                price: finalPrice,
+                origPrice: selectedShipItem.price * qty, // Show total original price
+                qty: qty, // Record Qty
+                date: new Date().toISOString(),
+                note: note
+            });
+
+            saveData();
+            showToast('出貨完成！');
+            clearShipForm();
+            populateShipDatalist(); // Refresh list to reflect stock changes
+        }
+
+        // --- 6. History ---
+        function renderHistory() {
+            const list = document.getElementById('history-list');
+            const empty = document.getElementById('history-empty');
+            list.innerHTML = '';
+
+            if(DB.sales.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            DB.sales.forEach(sale => {
+                const dateObj = new Date(sale.date);
+                const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                const isDiscounted = sale.price < sale.origPrice;
+                // Backwards compatibility for old records without qty
+                const displayQty = sale.qty ? sale.qty : 1; 
+
+                const div = document.createElement('div');
+                div.className = 'glass-panel p-4 rounded-xl border-l-4 border-cyan-500';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold text-white">${sale.itemName}</h4>
+                                <span class="bg-cyan-900 text-cyan-300 px-2 py-0.5 rounded text-xs">x${displayQty}</span>
+                            </div>
+                            <div class="text-xs text-cyan-300 mt-1">${sale.vendor}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-tech text-xl text-white">$${sale.price}</div>
+                            ${isDiscounted ? `<div class="text-xs text-red-400 line-through">$${sale.origPrice}</div>` : ''}
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-slate-500 border-t border-slate-700 pt-2 mt-2">
+                        <span>${dateStr}</span>
+                        <span>${sale.note || '-'}</span>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Init
+        updateDashboard();
+        // Prevent accidental back navigation on mobile
+        history.pushState(null, null, location.href);
+        window.onpopstate = function () {
+            history.go(1);
+        };
+
+    </script>
+</body>
+</html>
