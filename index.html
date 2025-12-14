@@ -6,12 +6,11 @@
     <title>3C 配件管理系統</title>
     
     <!-- ****************************************************** -->
-    <!-- iPhone/iOS 主畫面 Icon 設定 (已整合) -->
+    <!-- iPhone/iOS 主畫面 Icon 設定 -->
     <!-- ****************************************************** -->
     <meta name="apple-mobile-web-app-title" content="3C BOSS">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Icon 預設為深色風格以搭配您的主題 -->
     <link rel="apple-touch-icon" href="https://placehold.co/180x180/0f172a/00f3ff?text=3C+BOSS">
     
     <!-- Tailwind CSS -->
@@ -69,25 +68,6 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
-        .tech-border {
-            position: relative;
-        }
-        .tech-border::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, #00f3ff, #bc13fe);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-            transform-origin: left;
-        }
-        .tech-border:hover::after, .active-nav::after {
-            transform: scaleX(1);
-        }
-
         .page-section {
             display: none;
             padding-bottom: 80px; /* Space for bottom content */
@@ -114,6 +94,12 @@
             outline: none;
             border-color: #00f3ff;
             box-shadow: 0 0 0 2px rgba(0, 243, 255, 0.2);
+        }
+        
+        /* Date Input Dark Mode Fix */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
         }
     </style>
 </head>
@@ -178,6 +164,13 @@
                     </div>
                     <span class="font-bold text-slate-200">售出紀錄</span>
                 </button>
+
+                <button onclick="showPage('restockHistory')" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-slate-800 transition active:scale-95 group col-span-2">
+                    <div class="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center group-hover:bg-teal-500/40 transition">
+                        <i class="fa-solid fa-file-invoice text-teal-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200">進貨紀錄</span>
+                </button>
             </div>
             
             <div class="mt-8 p-4 glass-panel rounded-xl">
@@ -221,6 +214,12 @@
             <h2 class="text-xl font-bold text-green-400 mb-4 border-l-4 border-green-400 pl-3">進貨入庫</h2>
             
             <div class="glass-panel p-5 rounded-2xl space-y-4">
+                <!-- Date Input -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">進貨日期</label>
+                    <input type="date" id="restock-date" class="w-full p-3 rounded-lg">
+                </div>
+
                 <!-- Vendor Select -->
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">選擇廠商</label>
@@ -385,7 +384,7 @@
             </div>
         </div>
 
-        <!-- 7. HISTORY (售出紀錄) -->
+        <!-- 7. SALES HISTORY (售出紀錄) -->
         <div id="history" class="page-section">
             <h2 class="text-xl font-bold text-cyan-400 mb-4 border-l-4 border-cyan-400 pl-3">售出紀錄</h2>
             
@@ -396,6 +395,20 @@
             </div>
             <div id="history-empty" class="text-center text-slate-500 mt-10 hidden">
                 <p>尚無銷售紀錄</p>
+            </div>
+        </div>
+
+        <!-- 8. RESTOCK HISTORY (進貨紀錄 - 新增) -->
+        <div id="restockHistory" class="page-section">
+            <h2 class="text-xl font-bold text-teal-400 mb-4 border-l-4 border-teal-400 pl-3">進貨紀錄</h2>
+            
+            <div class="overflow-y-auto max-h-[70vh]">
+                <div id="restock-history-list" class="space-y-3">
+                    <!-- History Cards -->
+                </div>
+            </div>
+            <div id="restock-history-empty" class="text-center text-slate-500 mt-10 hidden">
+                <p>尚無進貨紀錄</p>
             </div>
         </div>
 
@@ -420,13 +433,15 @@
         const DB = {
             vendors: JSON.parse(localStorage.getItem('3c_vendors')) || ['Apple 原廠', '犀牛盾', '掏寶批發'],
             inventory: JSON.parse(localStorage.getItem('3c_inventory')) || [],
-            sales: JSON.parse(localStorage.getItem('3c_sales')) || []
+            sales: JSON.parse(localStorage.getItem('3c_sales')) || [],
+            restocks: JSON.parse(localStorage.getItem('3c_restocks')) || [] // New: Restock History
         };
 
         function saveData() {
             localStorage.setItem('3c_vendors', JSON.stringify(DB.vendors));
             localStorage.setItem('3c_inventory', JSON.stringify(DB.inventory));
             localStorage.setItem('3c_sales', JSON.stringify(DB.sales));
+            localStorage.setItem('3c_restocks', JSON.stringify(DB.restocks)); // Save Restocks
             updateDashboard();
         }
 
@@ -445,9 +460,14 @@
                 if(pageId === 'priceList') renderPriceList();
                 if(pageId === 'inventory') renderInventory();
                 if(pageId === 'vendors') renderVendors();
-                if(pageId === 'restock') populateVendorSelect();
+                if(pageId === 'restock') {
+                    populateVendorSelect();
+                    // Set default date to today
+                    document.getElementById('restock-date').valueAsDate = new Date();
+                }
                 if(pageId === 'shipping') { populateShipDatalist(); clearShipForm(); }
                 if(pageId === 'history') renderHistory();
+                if(pageId === 'restockHistory') renderRestockHistory(); // New
             }
             window.scrollTo(0,0);
         }
@@ -555,6 +575,7 @@
         }
 
         function submitRestock() {
+            const dateInput = document.getElementById('restock-date').value;
             const vendor = document.getElementById('restock-vendor').value;
             const name = document.getElementById('restock-name').value;
             let costInput = parseFloat(document.getElementById('restock-cost').value);
@@ -562,7 +583,7 @@
             const price = parseInt(document.getElementById('restock-price').value);
             const qty = parseInt(document.getElementById('restock-qty').value);
 
-            if(!vendor || !name || !costInput || !price || !qty) {
+            if(!dateInput || !vendor || !name || !costInput || !price || !qty) {
                 showToast('請填寫完整資料', 'error');
                 return;
             }
@@ -570,7 +591,7 @@
             // Normalize cost to TWD for storage
             const finalCost = currency === 'CNY' ? costInput * 5 : costInput;
 
-            // Check if item exists (by name & vendor) to update qty or add new
+            // 1. Update Inventory (Existing Logic)
             const existingItem = DB.inventory.find(i => i.name === name && i.vendor === vendor);
             
             if(existingItem) {
@@ -588,10 +609,21 @@
                 });
             }
 
+            // 2. Add to Restock History (New Logic)
+            DB.restocks.unshift({
+                id: Date.now() + 1, // Ensure unique ID just in case
+                date: dateInput,
+                vendor: vendor,
+                name: name,
+                cost: finalCost,
+                qty: qty,
+                price: price // Suggest selling price at that time
+            });
+
             saveData();
             showToast('進貨成功');
             
-            // Clear inputs
+            // Clear inputs (keep date)
             document.getElementById('restock-name').value = '';
             document.getElementById('restock-cost').value = '';
             document.getElementById('restock-price').value = '';
@@ -612,7 +644,6 @@
 
             DB.inventory.forEach(item => {
                 const tr = document.createElement('tr');
-                // Alternating row colors handled by loop logic if needed, but simple divide is fine
                 tr.innerHTML = `
                     <td class="p-3">
                         <div class="font-bold text-slate-200">${item.name}</div>
@@ -669,8 +700,8 @@
             DB.inventory.forEach(item => {
                 if(item.qty > 0) {
                     const opt = document.createElement('option');
-                    opt.value = item.name; // Datalist shows value
-                    opt.setAttribute('data-vendor', item.vendor); // Extra info
+                    opt.value = item.name;
+                    opt.setAttribute('data-vendor', item.vendor);
                     opt.textContent = `${item.vendor} - $${item.price}`;
                     dl.appendChild(opt);
                 }
@@ -679,7 +710,6 @@
 
         function fillShipDetails() {
             const nameInput = document.getElementById('ship-name-input').value;
-            // Simple match logic (might need more robust if duplicate names exist across vendors, but assuming unique combos for simple app)
             selectedShipItem = DB.inventory.find(i => i.name === nameInput && i.qty > 0);
             
             const card = document.getElementById('ship-details-card');
@@ -692,7 +722,6 @@
                 document.getElementById('ship-stock-display').innerText = selectedShipItem.qty;
                 document.getElementById('ship-orig-price').innerText = '$' + selectedShipItem.price;
                 
-                // Reset defaults
                 qtyInput.value = 1;
                 updateShipPrice();
                 document.getElementById('ship-discount-check').checked = false;
@@ -709,7 +738,6 @@
             let currentQty = parseInt(qtyInput.value) || 1;
             let newQty = currentQty + delta;
             
-            // Limit checks
             if (newQty < 1) newQty = 1;
             if (newQty > selectedShipItem.qty) {
                 showToast('庫存不足', 'error');
@@ -726,7 +754,6 @@
             const priceInput = document.getElementById('ship-final-price');
             const isDiscounted = document.getElementById('ship-discount-check').checked;
 
-            // Only auto-update price if not in manual discount mode
             if(!isDiscounted) {
                 priceInput.value = selectedShipItem.price * qty;
                 priceInput.readOnly = true;
@@ -744,7 +771,6 @@
                 priceInput.classList.add('bg-slate-800');
                 priceInput.classList.remove('bg-slate-900');
             } else {
-                // Reset to standard calculation if unchecked
                 updateShipPrice();
             }
         }
@@ -780,17 +806,15 @@
                  return;
             }
 
-            // 1. Deduct Stock
             selectedShipItem.qty -= qty;
             
-            // 2. Add to History
             DB.sales.unshift({
                 id: Date.now(),
                 itemName: selectedShipItem.name,
                 vendor: selectedShipItem.vendor,
                 price: finalPrice,
-                origPrice: selectedShipItem.price * qty, // Show total original price
-                qty: qty, // Record Qty
+                origPrice: selectedShipItem.price * qty,
+                qty: qty, 
                 date: new Date().toISOString(),
                 note: note
             });
@@ -798,10 +822,10 @@
             saveData();
             showToast('出貨完成！');
             clearShipForm();
-            populateShipDatalist(); // Refresh list to reflect stock changes
+            populateShipDatalist();
         }
 
-        // --- 6. History ---
+        // --- 6. Sales History ---
         function renderHistory() {
             const list = document.getElementById('history-list');
             const empty = document.getElementById('history-empty');
@@ -816,9 +840,7 @@
             DB.sales.forEach(sale => {
                 const dateObj = new Date(sale.date);
                 const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
                 const isDiscounted = sale.price < sale.origPrice;
-                // Backwards compatibility for old records without qty
                 const displayQty = sale.qty ? sale.qty : 1; 
 
                 const div = document.createElement('div');
@@ -846,6 +868,44 @@
             });
         }
 
+        // --- 7. Restock History (New) ---
+        function renderRestockHistory() {
+            const list = document.getElementById('restock-history-list');
+            const empty = document.getElementById('restock-history-empty');
+            list.innerHTML = '';
+
+            if(DB.restocks.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            // Sort by Date Descending (Newest first)
+            const sortedRestocks = [...DB.restocks].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedRestocks.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'glass-panel p-4 rounded-xl border-l-4 border-teal-500';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-bold text-white">${item.name}</h4>
+                            <div class="text-xs text-teal-300 mt-1">${item.vendor}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-slate-300">成本: $${item.cost}</div>
+                            <div class="text-lg font-bold text-white">x${item.qty}</div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-slate-500 border-t border-slate-700 pt-2 mt-2">
+                        <span class="text-teal-400"><i class="fa-regular fa-calendar mr-1"></i>${item.date}</span>
+                        <span>定價: $${item.price}</span>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
         // Init
         updateDashboard();
         // Prevent accidental back navigation on mobile
@@ -857,3 +917,5 @@
     </script>
 </body>
 </html>
+
+
