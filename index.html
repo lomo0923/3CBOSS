@@ -6,12 +6,11 @@
     <title>3C 配件管理系統</title>
     
     <!-- ****************************************************** -->
-    <!-- iPhone/iOS 主畫面 Icon 設定 (已整合) -->
+    <!-- iPhone/iOS 主畫面 Icon 設定 -->
     <!-- ****************************************************** -->
     <meta name="apple-mobile-web-app-title" content="3C BOSS">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <!-- Icon 預設為深色風格以搭配您的主題 -->
     <link rel="apple-touch-icon" href="https://placehold.co/180x180/0f172a/00f3ff?text=3C+BOSS">
     
     <!-- Tailwind CSS -->
@@ -69,25 +68,6 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
 
-        .tech-border {
-            position: relative;
-        }
-        .tech-border::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, #00f3ff, #bc13fe);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-            transform-origin: left;
-        }
-        .tech-border:hover::after, .active-nav::after {
-            transform: scaleX(1);
-        }
-
         .page-section {
             display: none;
             padding-bottom: 80px; /* Space for bottom content */
@@ -109,11 +89,18 @@
             border: 1px solid #475569;
             color: white;
             transition: all 0.2s;
+            box-sizing: border-box; /* Ensure padding doesn't overflow width */
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #00f3ff;
             box-shadow: 0 0 0 2px rgba(0, 243, 255, 0.2);
+        }
+        
+        /* Date Input Dark Mode Fix */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
         }
     </style>
 </head>
@@ -178,6 +165,13 @@
                     </div>
                     <span class="font-bold text-slate-200">售出紀錄</span>
                 </button>
+
+                <button onclick="showPage('restockHistory')" class="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center gap-3 hover:bg-slate-800 transition active:scale-95 group col-span-2">
+                    <div class="w-12 h-12 rounded-full bg-teal-500/20 flex items-center justify-center group-hover:bg-teal-500/40 transition">
+                        <i class="fa-solid fa-file-invoice text-teal-400 text-xl"></i>
+                    </div>
+                    <span class="font-bold text-slate-200">進貨紀錄</span>
+                </button>
             </div>
             
             <div class="mt-8 p-4 glass-panel rounded-xl">
@@ -221,35 +215,45 @@
             <h2 class="text-xl font-bold text-green-400 mb-4 border-l-4 border-green-400 pl-3">進貨入庫</h2>
             
             <div class="glass-panel p-5 rounded-2xl space-y-4">
+                
+                <!-- Date Input -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">進貨日期</label>
+                    <input type="date" id="restock-date" class="w-full h-11 px-3 rounded-lg text-sm bg-slate-800 border-slate-600 text-white">
+                </div>
+
                 <!-- Vendor Select -->
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">選擇廠商</label>
                     <div class="flex gap-2">
-                        <select id="restock-vendor" class="w-full p-3 rounded-lg appearance-none">
+                        <select id="restock-vendor" class="w-full h-11 px-3 rounded-lg appearance-none text-sm">
                             <option value="" disabled selected>請選擇...</option>
                         </select>
-                        <button onclick="showPage('vendors')" class="bg-slate-700 px-3 rounded-lg"><i class="fa-solid fa-plus"></i></button>
+                        <button onclick="showPage('vendors')" class="bg-slate-700 h-11 px-4 rounded-lg flex-shrink-0 flex items-center justify-center"><i class="fa-solid fa-plus"></i></button>
                     </div>
                 </div>
 
                 <!-- Product Name -->
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">品項名稱</label>
-                    <input type="text" id="restock-name" class="w-full p-3 rounded-lg" placeholder="例如：iPhone 15 透明殼">
+                    <label class="block text-xs text-slate-400 mb-1">品項名稱 (可輸入新名稱或選擇)</label>
+                    <!-- Added list attribute for autocomplete -->
+                    <input list="known-product-names" type="text" id="restock-name" class="w-full h-11 px-3 rounded-lg" placeholder="例如：iPhone 15 透明殼">
+                    <!-- Datalist for Autocomplete -->
+                    <datalist id="known-product-names"></datalist>
                 </div>
 
                 <!-- Currency & Cost -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">幣別</label>
-                        <select id="restock-currency" class="w-full p-3 rounded-lg" onchange="calculatePrice()">
+                        <select id="restock-currency" class="w-full h-11 px-3 rounded-lg" onchange="calculatePrice()">
                             <option value="TWD">台幣 (TWD)</option>
                             <option value="CNY">人民幣 (CNY)</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">進貨成本</label>
-                        <input type="number" id="restock-cost" class="w-full p-3 rounded-lg" placeholder="0" oninput="calculatePrice()">
+                        <input type="number" id="restock-cost" class="w-full h-11 px-3 rounded-lg" placeholder="0" oninput="calculatePrice()">
                     </div>
                 </div>
 
@@ -262,11 +266,11 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">預期毛利率 (%)</label>
-                        <input type="number" id="restock-margin" class="w-full p-3 rounded-lg" value="40" placeholder="40" oninput="calculatePrice()">
+                        <input type="number" id="restock-margin" class="w-full h-11 px-3 rounded-lg" value="40" placeholder="40" oninput="calculatePrice()">
                     </div>
                     <div>
                         <label class="block text-xs text-slate-400 mb-1">數量</label>
-                        <input type="number" id="restock-qty" class="w-full p-3 rounded-lg" value="1" placeholder="1">
+                        <input type="number" id="restock-qty" class="w-full h-11 px-3 rounded-lg" value="1" placeholder="1">
                     </div>
                 </div>
 
@@ -296,7 +300,7 @@
                 <!-- Select Product -->
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">選擇品項 (搜尋)</label>
-                    <input list="inventory-list" id="ship-name-input" class="w-full p-3 rounded-lg" placeholder="輸入名稱或選擇..." onchange="fillShipDetails()">
+                    <input list="inventory-list" id="ship-name-input" class="w-full h-11 px-3 rounded-lg" placeholder="輸入名稱或選擇..." onchange="fillShipDetails()">
                     <datalist id="inventory-list">
                         <!-- Populated by JS -->
                     </datalist>
@@ -336,13 +340,13 @@
                 <!-- Final Price Input -->
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">實際成交總金額</label>
-                    <input type="number" id="ship-final-price" class="w-full p-3 rounded-lg bg-slate-900 border-purple-500/50 text-purple-400 font-bold text-lg" readonly>
+                    <input type="number" id="ship-final-price" class="w-full h-11 px-3 rounded-lg bg-slate-900 border-purple-500/50 text-purple-400 font-bold text-lg" readonly>
                 </div>
 
                 <!-- Note -->
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">備註 (選填)</label>
-                    <input type="text" id="ship-note" class="w-full p-3 rounded-lg" placeholder="客訂、贈品...">
+                    <input type="text" id="ship-note" class="w-full h-11 px-3 rounded-lg" placeholder="客訂、贈品...">
                 </div>
 
                 <button onclick="submitShipment()" class="w-full bg-gradient-to-r from-purple-600 to-purple-500 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition mt-2">
@@ -358,7 +362,7 @@
             <!-- Search Bar -->
             <div class="relative mb-4">
                 <i class="fa-solid fa-search absolute left-3 top-3.5 text-slate-500"></i>
-                <input type="text" id="inventory-search" oninput="renderInventory()" class="w-full pl-10 p-3 rounded-xl bg-slate-800 border-none focus:ring-2 focus:ring-orange-500" placeholder="搜尋 品名 或 廠商...">
+                <input type="text" id="inventory-search" oninput="renderInventory()" class="w-full pl-10 h-11 rounded-xl bg-slate-800 border-none focus:ring-2 focus:ring-orange-500" placeholder="搜尋 品名 或 廠商...">
             </div>
 
             <div id="inventory-container" class="space-y-3 pb-20">
@@ -375,8 +379,8 @@
             <h2 class="text-xl font-bold text-pink-400 mb-4 border-l-4 border-pink-400 pl-3">廠商資料</h2>
             
             <div class="flex gap-2 mb-6">
-                <input type="text" id="new-vendor-name" class="flex-1 p-3 rounded-xl" placeholder="輸入新廠商名稱">
-                <button onclick="addVendor()" class="bg-pink-600 text-white px-5 rounded-xl font-bold shadow-lg hover:bg-pink-500 active:scale-95">新增</button>
+                <input type="text" id="new-vendor-name" class="flex-1 h-11 px-3 rounded-xl" placeholder="輸入新廠商名稱">
+                <button onclick="addVendor()" class="bg-pink-600 text-white px-5 h-11 rounded-xl font-bold shadow-lg hover:bg-pink-500 active:scale-95">新增</button>
             </div>
 
             <h3 class="text-sm text-slate-400 mb-2">已建檔廠商</h3>
@@ -385,7 +389,7 @@
             </div>
         </div>
 
-        <!-- 7. HISTORY (售出紀錄) -->
+        <!-- 7. SALES HISTORY (售出紀錄) -->
         <div id="history" class="page-section">
             <h2 class="text-xl font-bold text-cyan-400 mb-4 border-l-4 border-cyan-400 pl-3">售出紀錄</h2>
             
@@ -399,6 +403,20 @@
             </div>
         </div>
 
+        <!-- 8. RESTOCK HISTORY (進貨紀錄) -->
+        <div id="restockHistory" class="page-section">
+            <h2 class="text-xl font-bold text-teal-400 mb-4 border-l-4 border-teal-400 pl-3">進貨紀錄</h2>
+            
+            <div class="overflow-y-auto max-h-[70vh]">
+                <div id="restock-history-list" class="space-y-3">
+                    <!-- History Cards -->
+                </div>
+            </div>
+            <div id="restock-history-empty" class="text-center text-slate-500 mt-10 hidden">
+                <p>尚無進貨紀錄</p>
+            </div>
+        </div>
+
     </main>
 
     <!-- Global Back to Home Button (Visible only on sub-pages) -->
@@ -407,6 +425,23 @@
             <i class="fa-solid fa-house"></i>
             <span>返回首頁</span>
         </button>
+    </div>
+
+    <!-- Edit Modal (General Purpose) -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 w-full max-w-md rounded-2xl border border-slate-600 shadow-2xl overflow-hidden animate-[fadeIn_0.2s_ease-out]">
+            <div class="bg-slate-700 p-4 border-b border-slate-600 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg" id="edit-modal-title">編輯資料</h3>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-5 space-y-4" id="edit-modal-body">
+                <!-- Content injected via JS -->
+            </div>
+            <div class="p-4 bg-slate-900 border-t border-slate-700 flex gap-3">
+                <button onclick="closeEditModal()" class="flex-1 py-3 rounded-xl text-slate-400 hover:bg-slate-800 font-bold">取消</button>
+                <button onclick="saveEdit()" class="flex-1 py-3 rounded-xl bg-neon-blue text-slate-900 font-bold hover:bg-cyan-400">儲存變更</button>
+            </div>
+        </div>
     </div>
 
     <!-- Toast Notification -->
@@ -420,13 +455,15 @@
         const DB = {
             vendors: JSON.parse(localStorage.getItem('3c_vendors')) || ['Apple 原廠', '犀牛盾', '掏寶批發'],
             inventory: JSON.parse(localStorage.getItem('3c_inventory')) || [],
-            sales: JSON.parse(localStorage.getItem('3c_sales')) || []
+            sales: JSON.parse(localStorage.getItem('3c_sales')) || [],
+            restocks: JSON.parse(localStorage.getItem('3c_restocks')) || []
         };
 
         function saveData() {
             localStorage.setItem('3c_vendors', JSON.stringify(DB.vendors));
             localStorage.setItem('3c_inventory', JSON.stringify(DB.inventory));
             localStorage.setItem('3c_sales', JSON.stringify(DB.sales));
+            localStorage.setItem('3c_restocks', JSON.stringify(DB.restocks));
             updateDashboard();
         }
 
@@ -445,9 +482,14 @@
                 if(pageId === 'priceList') renderPriceList();
                 if(pageId === 'inventory') renderInventory();
                 if(pageId === 'vendors') renderVendors();
-                if(pageId === 'restock') populateVendorSelect();
+                if(pageId === 'restock') {
+                    populateVendorSelect();
+                    populateProductNames(); // Refresh autocomplete
+                    document.getElementById('restock-date').valueAsDate = new Date();
+                }
                 if(pageId === 'shipping') { populateShipDatalist(); clearShipForm(); }
                 if(pageId === 'history') renderHistory();
+                if(pageId === 'restockHistory') renderRestockHistory();
             }
             window.scrollTo(0,0);
         }
@@ -490,7 +532,10 @@
                 div.className = 'bg-slate-800 p-4 rounded-xl flex justify-between items-center';
                 div.innerHTML = `
                     <span class="font-bold">${v}</span>
-                    <button onclick="deleteVendor(${index})" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    <div class="flex gap-3">
+                        <button onclick="openEditModal('vendor', ${index})" class="text-slate-400 hover:text-neon-blue"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteVendor(${index})" class="text-slate-500 hover:text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    </div>
                 `;
                 list.appendChild(div);
             });
@@ -509,7 +554,7 @@
         }
 
         function deleteVendor(index) {
-            if(confirm('確定刪除此廠商？')) {
+            if(confirm('確定刪除此廠商？\n注意：這不會刪除該廠商的庫存商品。')) {
                 DB.vendors.splice(index, 1);
                 saveData();
                 renderVendors();
@@ -528,6 +573,17 @@
         }
 
         // --- 3. Restock ---
+        function populateProductNames() {
+            const datalist = document.getElementById('known-product-names');
+            datalist.innerHTML = '';
+            const uniqueNames = [...new Set(DB.inventory.map(i => i.name))];
+            uniqueNames.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                datalist.appendChild(opt);
+            });
+        }
+
         function calculatePrice() {
             const currency = document.getElementById('restock-currency').value;
             let cost = parseFloat(document.getElementById('restock-cost').value) || 0;
@@ -535,7 +591,6 @@
             const displayConvert = document.getElementById('currency-convert-display');
             const convertedSpan = document.getElementById('converted-cost');
 
-            // Handle Currency
             if(currency === 'CNY') {
                 displayConvert.classList.remove('hidden');
                 cost = cost * 5;
@@ -544,8 +599,6 @@
                 displayConvert.classList.add('hidden');
             }
 
-            // Formula: Cost / (1 - Margin%)
-            // e.g., Cost 100, Margin 40% (0.4) -> 100 / 0.6 = 166.6
             let sellPrice = 0;
             if(cost > 0 && margin < 100) {
                 sellPrice = Math.ceil(cost / (1 - (margin / 100)));
@@ -555,6 +608,7 @@
         }
 
         function submitRestock() {
+            const dateInput = document.getElementById('restock-date').value;
             const vendor = document.getElementById('restock-vendor').value;
             const name = document.getElementById('restock-name').value;
             let costInput = parseFloat(document.getElementById('restock-cost').value);
@@ -562,21 +616,19 @@
             const price = parseInt(document.getElementById('restock-price').value);
             const qty = parseInt(document.getElementById('restock-qty').value);
 
-            if(!vendor || !name || !costInput || !price || !qty) {
+            if(!dateInput || !vendor || !name || !costInput || !price || !qty) {
                 showToast('請填寫完整資料', 'error');
                 return;
             }
 
-            // Normalize cost to TWD for storage
             const finalCost = currency === 'CNY' ? costInput * 5 : costInput;
 
-            // Check if item exists (by name & vendor) to update qty or add new
             const existingItem = DB.inventory.find(i => i.name === name && i.vendor === vendor);
             
             if(existingItem) {
                 existingItem.qty = parseInt(existingItem.qty) + qty;
-                existingItem.cost = finalCost; // Update latest cost
-                existingItem.price = price;    // Update latest price
+                existingItem.cost = finalCost;
+                existingItem.price = price;
             } else {
                 DB.inventory.push({
                     id: Date.now(),
@@ -588,10 +640,19 @@
                 });
             }
 
+            DB.restocks.unshift({
+                id: Date.now() + 1,
+                date: dateInput,
+                vendor: vendor,
+                name: name,
+                cost: finalCost,
+                qty: qty,
+                price: price
+            });
+
             saveData();
             showToast('進貨成功');
             
-            // Clear inputs
             document.getElementById('restock-name').value = '';
             document.getElementById('restock-cost').value = '';
             document.getElementById('restock-price').value = '';
@@ -612,7 +673,6 @@
 
             DB.inventory.forEach(item => {
                 const tr = document.createElement('tr');
-                // Alternating row colors handled by loop logic if needed, but simple divide is fine
                 tr.innerHTML = `
                     <td class="p-3">
                         <div class="font-bold text-slate-200">${item.name}</div>
@@ -646,14 +706,15 @@
                 const div = document.createElement('div');
                 div.className = 'glass-panel p-4 rounded-xl border-l-4 border-orange-400 flex justify-between items-center';
                 div.innerHTML = `
-                    <div>
+                    <div class="flex-1">
                         <div class="text-xs text-orange-300 mb-1">${item.vendor}</div>
                         <h3 class="font-bold text-white text-lg">${item.name}</h3>
                         <div class="text-xs text-slate-500 mt-1">成本: $${item.cost}</div>
                     </div>
-                    <div class="text-right">
+                    <div class="text-right flex flex-col items-end gap-1">
                         <div class="text-2xl font-tech text-neon-blue">$${item.price}</div>
-                        <div class="text-sm text-slate-400 mt-1">庫存: <span class="${item.qty < 3 ? 'text-red-400 font-bold' : 'text-white'}">${item.qty}</span></div>
+                        <div class="text-sm text-slate-400">庫存: <span class="${item.qty < 3 ? 'text-red-400 font-bold' : 'text-white'}">${item.qty}</span></div>
+                        <button onclick="openEditModal('inventory', ${item.id})" class="mt-1 text-slate-400 hover:text-white bg-slate-700/50 p-2 rounded-lg text-xs"><i class="fa-solid fa-pen mr-1"></i>編輯</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -669,8 +730,8 @@
             DB.inventory.forEach(item => {
                 if(item.qty > 0) {
                     const opt = document.createElement('option');
-                    opt.value = item.name; // Datalist shows value
-                    opt.setAttribute('data-vendor', item.vendor); // Extra info
+                    opt.value = item.name;
+                    opt.setAttribute('data-vendor', item.vendor);
                     opt.textContent = `${item.vendor} - $${item.price}`;
                     dl.appendChild(opt);
                 }
@@ -679,7 +740,6 @@
 
         function fillShipDetails() {
             const nameInput = document.getElementById('ship-name-input').value;
-            // Simple match logic (might need more robust if duplicate names exist across vendors, but assuming unique combos for simple app)
             selectedShipItem = DB.inventory.find(i => i.name === nameInput && i.qty > 0);
             
             const card = document.getElementById('ship-details-card');
@@ -692,7 +752,6 @@
                 document.getElementById('ship-stock-display').innerText = selectedShipItem.qty;
                 document.getElementById('ship-orig-price').innerText = '$' + selectedShipItem.price;
                 
-                // Reset defaults
                 qtyInput.value = 1;
                 updateShipPrice();
                 document.getElementById('ship-discount-check').checked = false;
@@ -709,7 +768,6 @@
             let currentQty = parseInt(qtyInput.value) || 1;
             let newQty = currentQty + delta;
             
-            // Limit checks
             if (newQty < 1) newQty = 1;
             if (newQty > selectedShipItem.qty) {
                 showToast('庫存不足', 'error');
@@ -726,7 +784,6 @@
             const priceInput = document.getElementById('ship-final-price');
             const isDiscounted = document.getElementById('ship-discount-check').checked;
 
-            // Only auto-update price if not in manual discount mode
             if(!isDiscounted) {
                 priceInput.value = selectedShipItem.price * qty;
                 priceInput.readOnly = true;
@@ -744,7 +801,6 @@
                 priceInput.classList.add('bg-slate-800');
                 priceInput.classList.remove('bg-slate-900');
             } else {
-                // Reset to standard calculation if unchecked
                 updateShipPrice();
             }
         }
@@ -780,17 +836,15 @@
                  return;
             }
 
-            // 1. Deduct Stock
             selectedShipItem.qty -= qty;
             
-            // 2. Add to History
             DB.sales.unshift({
                 id: Date.now(),
                 itemName: selectedShipItem.name,
                 vendor: selectedShipItem.vendor,
                 price: finalPrice,
-                origPrice: selectedShipItem.price * qty, // Show total original price
-                qty: qty, // Record Qty
+                origPrice: selectedShipItem.price * qty,
+                qty: qty, 
                 date: new Date().toISOString(),
                 note: note
             });
@@ -798,10 +852,10 @@
             saveData();
             showToast('出貨完成！');
             clearShipForm();
-            populateShipDatalist(); // Refresh list to reflect stock changes
+            populateShipDatalist();
         }
 
-        // --- 6. History ---
+        // --- 6. Sales History ---
         function renderHistory() {
             const list = document.getElementById('history-list');
             const empty = document.getElementById('history-empty');
@@ -816,25 +870,24 @@
             DB.sales.forEach(sale => {
                 const dateObj = new Date(sale.date);
                 const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
                 const isDiscounted = sale.price < sale.origPrice;
-                // Backwards compatibility for old records without qty
                 const displayQty = sale.qty ? sale.qty : 1; 
 
                 const div = document.createElement('div');
                 div.className = 'glass-panel p-4 rounded-xl border-l-4 border-cyan-500';
                 div.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
-                        <div>
+                        <div class="flex-1">
                             <div class="flex items-center gap-2">
                                 <h4 class="font-bold text-white">${sale.itemName}</h4>
                                 <span class="bg-cyan-900 text-cyan-300 px-2 py-0.5 rounded text-xs">x${displayQty}</span>
                             </div>
                             <div class="text-xs text-cyan-300 mt-1">${sale.vendor}</div>
                         </div>
-                        <div class="text-right">
+                        <div class="text-right flex flex-col items-end">
                             <div class="font-tech text-xl text-white">$${sale.price}</div>
                             ${isDiscounted ? `<div class="text-xs text-red-400 line-through">$${sale.origPrice}</div>` : ''}
+                            <button onclick="openEditModal('sale', ${sale.id})" class="mt-1 text-slate-400 hover:text-white"><i class="fa-solid fa-pen text-sm"></i></button>
                         </div>
                     </div>
                     <div class="flex justify-between items-center text-xs text-slate-500 border-t border-slate-700 pt-2 mt-2">
@@ -844,6 +897,155 @@
                 `;
                 list.appendChild(div);
             });
+        }
+
+        // --- 7. Restock History ---
+        function renderRestockHistory() {
+            const list = document.getElementById('restock-history-list');
+            const empty = document.getElementById('restock-history-empty');
+            list.innerHTML = '';
+
+            if(DB.restocks.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            const sortedRestocks = [...DB.restocks].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sortedRestocks.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'glass-panel p-4 rounded-xl border-l-4 border-teal-500';
+                div.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex-1">
+                            <h4 class="font-bold text-white">${item.name}</h4>
+                            <div class="text-xs text-teal-300 mt-1">${item.vendor}</div>
+                        </div>
+                        <div class="text-right flex flex-col items-end">
+                            <div class="text-sm text-slate-300">成本: $${item.cost}</div>
+                            <div class="text-lg font-bold text-white">x${item.qty}</div>
+                            <button onclick="openEditModal('restock', ${item.id})" class="mt-1 text-slate-400 hover:text-white"><i class="fa-solid fa-pen text-sm"></i></button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-slate-500 border-t border-slate-700 pt-2 mt-2">
+                        <span class="text-teal-400"><i class="fa-regular fa-calendar mr-1"></i>${item.date}</span>
+                        <span>定價: $${item.price}</span>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // --- 8. Edit Modal Logic (New) ---
+        let currentEditType = null;
+        let currentEditId = null;
+
+        function openEditModal(type, id) {
+            currentEditType = type;
+            currentEditId = id;
+            const modal = document.getElementById('edit-modal');
+            const body = document.getElementById('edit-modal-body');
+            const title = document.getElementById('edit-modal-title');
+            
+            body.innerHTML = ''; 
+            modal.classList.remove('hidden');
+
+            if(type === 'inventory') {
+                title.innerText = '編輯庫存';
+                const item = DB.inventory.find(i => i.id === id);
+                body.innerHTML = `
+                    <div><label class="text-xs text-slate-400">品名</label><input id="edit-name" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${item.name}"></div>
+                    <div><label class="text-xs text-slate-400">廠商</label><input id="edit-vendor" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${item.vendor}" disabled title="請至廠商資料修改名稱"></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-xs text-slate-400">成本</label><input type="number" id="edit-cost" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${item.cost}"></div>
+                        <div><label class="text-xs text-slate-400">售價</label><input type="number" id="edit-price" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${item.price}"></div>
+                    </div>
+                    <div><label class="text-xs text-slate-400">庫存數量</label><input type="number" id="edit-qty" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${item.qty}"></div>
+                `;
+            } else if(type === 'vendor') {
+                title.innerText = '編輯廠商名稱';
+                const name = DB.vendors[id]; // id here is index
+                body.innerHTML = `
+                    <p class="text-xs text-yellow-500 mb-2"><i class="fa-solid fa-circle-exclamation mr-1"></i> 修改後，庫存與紀錄中的廠商名稱也會同步更新。</p>
+                    <div><label class="text-xs text-slate-400">廠商名稱</label><input id="edit-vendor-name" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${name}"></div>
+                `;
+            } else if(type === 'sale') {
+                title.innerText = '編輯售出紀錄';
+                const sale = DB.sales.find(s => s.id === id);
+                body.innerHTML = `
+                    <div><label class="text-xs text-slate-400">品名</label><input disabled class="w-full p-2 rounded bg-slate-800 border-slate-700 text-slate-500" value="${sale.itemName}"></div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-xs text-slate-400">成交總金額</label><input type="number" id="edit-sale-price" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${sale.price}"></div>
+                        <div><label class="text-xs text-slate-400">數量</label><input type="number" id="edit-sale-qty" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${sale.qty || 1}"></div>
+                    </div>
+                    <div><label class="text-xs text-slate-400">備註</label><input id="edit-sale-note" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${sale.note || ''}"></div>
+                `;
+            } else if(type === 'restock') {
+                title.innerText = '編輯進貨紀錄';
+                const restock = DB.restocks.find(r => r.id === id);
+                body.innerHTML = `
+                     <div><label class="text-xs text-slate-400">品名</label><input disabled class="w-full p-2 rounded bg-slate-800 border-slate-700 text-slate-500" value="${restock.name}"></div>
+                     <div><label class="text-xs text-slate-400">進貨日期</label><input type="date" id="edit-restock-date" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${restock.date}"></div>
+                     <div class="grid grid-cols-2 gap-2">
+                        <div><label class="text-xs text-slate-400">成本</label><input type="number" id="edit-restock-cost" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${restock.cost}"></div>
+                        <div><label class="text-xs text-slate-400">數量</label><input type="number" id="edit-restock-qty" class="w-full p-2 rounded bg-slate-900 border-slate-600" value="${restock.qty}"></div>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">* 僅修改紀錄，不會自動回推庫存數量，請至庫存管理調整庫存。</p>
+                `;
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        function saveEdit() {
+            if(currentEditType === 'inventory') {
+                const item = DB.inventory.find(i => i.id === currentEditId);
+                if(item) {
+                    item.name = document.getElementById('edit-name').value;
+                    item.cost = parseFloat(document.getElementById('edit-cost').value);
+                    item.price = parseInt(document.getElementById('edit-price').value);
+                    item.qty = parseInt(document.getElementById('edit-qty').value);
+                    saveData();
+                    renderInventory();
+                }
+            } else if(currentEditType === 'vendor') {
+                const newName = document.getElementById('edit-vendor-name').value.trim();
+                if(newName) {
+                    const oldName = DB.vendors[currentEditId];
+                    DB.vendors[currentEditId] = newName;
+                    
+                    // Update all references
+                    DB.inventory.forEach(i => { if(i.vendor === oldName) i.vendor = newName; });
+                    DB.sales.forEach(s => { if(s.vendor === oldName) s.vendor = newName; });
+                    DB.restocks.forEach(r => { if(r.vendor === oldName) r.vendor = newName; });
+
+                    saveData();
+                    renderVendors();
+                }
+            } else if(currentEditType === 'sale') {
+                const sale = DB.sales.find(s => s.id === currentEditId);
+                if(sale) {
+                    sale.price = parseInt(document.getElementById('edit-sale-price').value);
+                    sale.qty = parseInt(document.getElementById('edit-sale-qty').value);
+                    sale.note = document.getElementById('edit-sale-note').value;
+                    saveData();
+                    renderHistory();
+                }
+            } else if(currentEditType === 'restock') {
+                const restock = DB.restocks.find(r => r.id === currentEditId);
+                if(restock) {
+                    restock.date = document.getElementById('edit-restock-date').value;
+                    restock.cost = parseFloat(document.getElementById('edit-restock-cost').value);
+                    restock.qty = parseInt(document.getElementById('edit-restock-qty').value);
+                    saveData();
+                    renderRestockHistory();
+                }
+            }
+            closeEditModal();
+            showToast('修改已儲存');
         }
 
         // Init
