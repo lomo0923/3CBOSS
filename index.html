@@ -215,11 +215,18 @@
             <h2 class="text-xl font-bold text-green-400 mb-4 border-l-4 border-green-400 pl-3">進貨入庫</h2>
             
             <div class="glass-panel p-5 rounded-2xl space-y-4">
+<<<<<<< HEAD
                 
                 <!-- Date Input -->
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">進貨日期</label>
                     <input type="date" id="restock-date" class="w-full h-11 px-3 rounded-lg text-sm bg-slate-800 border-slate-600 text-white">
+=======
+                <!-- Date Input -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">進貨日期</label>
+                    <input type="date" id="restock-date" class="w-full p-3 rounded-lg">
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
                 </div>
 
                 <!-- Vendor Select -->
@@ -403,7 +410,11 @@
             </div>
         </div>
 
+<<<<<<< HEAD
         <!-- 8. RESTOCK HISTORY (進貨紀錄) -->
+=======
+        <!-- 8. RESTOCK HISTORY (進貨紀錄 - 新增) -->
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
         <div id="restockHistory" class="page-section">
             <h2 class="text-xl font-bold text-teal-400 mb-4 border-l-4 border-teal-400 pl-3">進貨紀錄</h2>
             
@@ -456,14 +467,22 @@
             vendors: JSON.parse(localStorage.getItem('3c_vendors')) || ['Apple 原廠', '犀牛盾', '掏寶批發'],
             inventory: JSON.parse(localStorage.getItem('3c_inventory')) || [],
             sales: JSON.parse(localStorage.getItem('3c_sales')) || [],
+<<<<<<< HEAD
             restocks: JSON.parse(localStorage.getItem('3c_restocks')) || []
+=======
+            restocks: JSON.parse(localStorage.getItem('3c_restocks')) || [] // New: Restock History
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
         };
 
         function saveData() {
             localStorage.setItem('3c_vendors', JSON.stringify(DB.vendors));
             localStorage.setItem('3c_inventory', JSON.stringify(DB.inventory));
             localStorage.setItem('3c_sales', JSON.stringify(DB.sales));
+<<<<<<< HEAD
             localStorage.setItem('3c_restocks', JSON.stringify(DB.restocks));
+=======
+            localStorage.setItem('3c_restocks', JSON.stringify(DB.restocks)); // Save Restocks
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
             updateDashboard();
         }
 
@@ -484,12 +503,20 @@
                 if(pageId === 'vendors') renderVendors();
                 if(pageId === 'restock') {
                     populateVendorSelect();
+<<<<<<< HEAD
                     populateProductNames(); // Refresh autocomplete
+=======
+                    // Set default date to today
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
                     document.getElementById('restock-date').valueAsDate = new Date();
                 }
                 if(pageId === 'shipping') { populateShipDatalist(); clearShipForm(); }
                 if(pageId === 'history') renderHistory();
+<<<<<<< HEAD
                 if(pageId === 'restockHistory') renderRestockHistory();
+=======
+                if(pageId === 'restockHistory') renderRestockHistory(); // New
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
             }
             window.scrollTo(0,0);
         }
@@ -623,6 +650,10 @@
 
             const finalCost = currency === 'CNY' ? costInput * 5 : costInput;
 
+<<<<<<< HEAD
+=======
+            // 1. Update Inventory (Existing Logic)
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
             const existingItem = DB.inventory.find(i => i.name === name && i.vendor === vendor);
             
             if(existingItem) {
@@ -640,19 +671,33 @@
                 });
             }
 
+<<<<<<< HEAD
             DB.restocks.unshift({
                 id: Date.now() + 1,
+=======
+            // 2. Add to Restock History (New Logic)
+            DB.restocks.unshift({
+                id: Date.now() + 1, // Ensure unique ID just in case
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
                 date: dateInput,
                 vendor: vendor,
                 name: name,
                 cost: finalCost,
                 qty: qty,
+<<<<<<< HEAD
                 price: price
+=======
+                price: price // Suggest selling price at that time
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
             });
 
             saveData();
             showToast('進貨成功');
             
+<<<<<<< HEAD
+=======
+            // Clear inputs (keep date)
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
             document.getElementById('restock-name').value = '';
             document.getElementById('restock-cost').value = '';
             document.getElementById('restock-price').value = '';
@@ -899,7 +944,11 @@
             });
         }
 
+<<<<<<< HEAD
         // --- 7. Restock History ---
+=======
+        // --- 7. Restock History (New) ---
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
         function renderRestockHistory() {
             const list = document.getElementById('restock-history-list');
             const empty = document.getElementById('restock-history-empty');
@@ -911,6 +960,10 @@
             }
             empty.classList.add('hidden');
 
+<<<<<<< HEAD
+=======
+            // Sort by Date Descending (Newest first)
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
             const sortedRestocks = [...DB.restocks].sort((a, b) => new Date(b.date) - new Date(a.date));
 
             sortedRestocks.forEach(item => {
@@ -918,6 +971,7 @@
                 div.className = 'glass-panel p-4 rounded-xl border-l-4 border-teal-500';
                 div.innerHTML = `
                     <div class="flex justify-between items-start mb-2">
+<<<<<<< HEAD
                         <div class="flex-1">
                             <h4 class="font-bold text-white">${item.name}</h4>
                             <div class="text-xs text-teal-300 mt-1">${item.vendor}</div>
@@ -926,6 +980,15 @@
                             <div class="text-sm text-slate-300">成本: $${item.cost}</div>
                             <div class="text-lg font-bold text-white">x${item.qty}</div>
                             <button onclick="openEditModal('restock', ${item.id})" class="mt-1 text-slate-400 hover:text-white"><i class="fa-solid fa-pen text-sm"></i></button>
+=======
+                        <div>
+                            <h4 class="font-bold text-white">${item.name}</h4>
+                            <div class="text-xs text-teal-300 mt-1">${item.vendor}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-slate-300">成本: $${item.cost}</div>
+                            <div class="text-lg font-bold text-white">x${item.qty}</div>
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
                         </div>
                     </div>
                     <div class="flex justify-between items-center text-xs text-slate-500 border-t border-slate-700 pt-2 mt-2">
@@ -937,6 +1000,7 @@
             });
         }
 
+<<<<<<< HEAD
         // --- 8. Edit Modal Logic (New) ---
         let currentEditType = null;
         let currentEditId = null;
@@ -1048,6 +1112,8 @@
             showToast('修改已儲存');
         }
 
+=======
+>>>>>>> e9925818c725089b0f9130ab005b526e1a9f2461
         // Init
         updateDashboard();
         // Prevent accidental back navigation on mobile
@@ -1059,3 +1125,5 @@
     </script>
 </body>
 </html>
+
+
