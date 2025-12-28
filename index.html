@@ -451,12 +451,26 @@
     </div>
 
     <script>
+        // --- Safe JSON Parse Helper (Prevents crash on invalid data) ---
+        function safeParse(key, defaultValue) {
+            try {
+                const stored = localStorage.getItem(key);
+                if (!stored) return defaultValue;
+                const parsed = JSON.parse(stored);
+                return Array.isArray(parsed) ? parsed : defaultValue; // Ensure it's an array
+            } catch (e) {
+                console.error(`Error parsing ${key}:`, e);
+                // Reset corrupted data to prevent persistent crash
+                return defaultValue; 
+            }
+        }
+
         // --- Data Structure & Init ---
         const DB = {
-            vendors: JSON.parse(localStorage.getItem('3c_vendors')) || ['Apple 原廠', '犀牛盾', '掏寶批發'],
-            inventory: JSON.parse(localStorage.getItem('3c_inventory')) || [],
-            sales: JSON.parse(localStorage.getItem('3c_sales')) || [],
-            restocks: JSON.parse(localStorage.getItem('3c_restocks')) || []
+            vendors: safeParse('3c_vendors', ['Apple 原廠', '犀牛盾', '掏寶批發']),
+            inventory: safeParse('3c_inventory', []),
+            sales: safeParse('3c_sales', []),
+            restocks: safeParse('3c_restocks', [])
         };
 
         function saveData() {
@@ -511,15 +525,19 @@
 
         // --- 1. Dashboard ---
         function updateDashboard() {
+            // Safety check: ensure arrays exist
+            const inv = Array.isArray(DB.inventory) ? DB.inventory : [];
+            const sls = Array.isArray(DB.sales) ? DB.sales : [];
+
             // Count total stock items
-            const totalItems = DB.inventory.reduce((acc, item) => acc + parseInt(item.qty), 0);
+            const totalItems = inv.reduce((acc, item) => acc + (parseInt(item.qty) || 0), 0);
             document.getElementById('dashboard-count').innerText = totalItems;
 
             // Calculate today's sales
             const todayStr = new Date().toLocaleDateString();
-            const todaySales = DB.sales
+            const todaySales = sls
                 .filter(s => new Date(s.date).toLocaleDateString() === todayStr)
-                .reduce((acc, s) => acc + parseInt(s.price), 0);
+                .reduce((acc, s) => acc + (parseInt(s.price) || 0), 0);
             document.getElementById('dashboard-sales').innerText = `$${todaySales.toLocaleString()}`;
         }
 
@@ -1005,9 +1023,9 @@
                 const item = DB.inventory.find(i => i.id === currentEditId);
                 if(item) {
                     item.name = document.getElementById('edit-name').value;
-                    item.cost = parseFloat(document.getElementById('edit-cost').value);
-                    item.price = parseInt(document.getElementById('edit-price').value);
-                    item.qty = parseInt(document.getElementById('edit-qty').value);
+                    item.cost = parseFloat(document.getElementById('edit-cost').value) || 0;
+                    item.price = parseInt(document.getElementById('edit-price').value) || 0;
+                    item.qty = parseInt(document.getElementById('edit-qty').value) || 0;
                     saveData();
                     renderInventory();
                 }
@@ -1028,8 +1046,8 @@
             } else if(currentEditType === 'sale') {
                 const sale = DB.sales.find(s => s.id === currentEditId);
                 if(sale) {
-                    sale.price = parseInt(document.getElementById('edit-sale-price').value);
-                    sale.qty = parseInt(document.getElementById('edit-sale-qty').value);
+                    sale.price = parseInt(document.getElementById('edit-sale-price').value) || 0;
+                    sale.qty = parseInt(document.getElementById('edit-sale-qty').value) || 1;
                     sale.note = document.getElementById('edit-sale-note').value;
                     saveData();
                     renderHistory();
@@ -1038,8 +1056,8 @@
                 const restock = DB.restocks.find(r => r.id === currentEditId);
                 if(restock) {
                     restock.date = document.getElementById('edit-restock-date').value;
-                    restock.cost = parseFloat(document.getElementById('edit-restock-cost').value);
-                    restock.qty = parseInt(document.getElementById('edit-restock-qty').value);
+                    restock.cost = parseFloat(document.getElementById('edit-restock-cost').value) || 0;
+                    restock.qty = parseInt(document.getElementById('edit-restock-qty').value) || 1;
                     saveData();
                     renderRestockHistory();
                 }
@@ -1048,13 +1066,21 @@
             showToast('修改已儲存');
         }
 
-        // Init
-        updateDashboard();
-        // Prevent accidental back navigation on mobile
-        history.pushState(null, null, location.href);
-        window.onpopstate = function () {
-            history.go(1);
-        };
+        // Init with safe execution
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                updateDashboard();
+                // Check if history API works before using
+                if (window.history && window.history.pushState) {
+                    history.pushState(null, null, location.href);
+                    window.onpopstate = function () {
+                        history.go(1);
+                    };
+                }
+            } catch (e) {
+                console.error("Init Error:", e);
+            }
+        });
 
     </script>
 </body>
